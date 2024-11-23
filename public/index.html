@@ -80,28 +80,72 @@
       h1 {
         display: none; /* Hide initially */
       }
+
+      /* Message for no definitions found */
+      #no-definitions {
+        color: red;
+        font-size: 18px;
+        text-align: center;
+        display: none; /* Hide initially */
+      }
     </style>
-    <script>
+  </head>
+  <body>
+    <div>
+      <form id="quick-define-form">
+        <!-- Container for input and button -->
+        <div class="input-button-container">
+          <input type="text" id="quick-define-input" />
+          <button onclick="submitQuickDef()" type="button">Quick define</button>
+        </div>
+
+        <!-- Initially hidden header -->
+        <h1>Definitions List</h1>
+
+        <!-- Initially hidden results list -->
+        <ul id="results-list">
+          <!-- Results will be rendered here -->
+        </ul>
+
+        <!-- Message for no definitions found -->
+        <div id="no-definitions">No definitions found :(</div>
+      </form>
+    </div>
+
+    <!-- Using defer to ensure the script runs after the DOM is loaded -->
+    <script defer>
       function assert(condition, message) {
         if (!condition) {
           throw new Error(message || "Assertion failed");
         }
       }
 
-      const removeBrackets = str => str.replace(/[\[\]{}]/g, '');
+      const removeBrackets = (str) => str.replace(/[\[\]{}]/g, '');
 
       // Function to render the data as a list
       const renderResults = (data) => {
-        // Get the <ul> element to append the list items
         const resultsList = document.getElementById("results-list");
         const header = document.querySelector("h1");
+        const noDefinitions = document.getElementById("no-definitions");
 
         // Clear any existing list items
         resultsList.innerHTML = "";
 
+        console.log("data: ", data);
+
+        // If the list is empty, show the "no definitions found" message
+        if (data.list.length === 0) {
+          noDefinitions.style.display = "block";
+          resultsList.style.display = "none"; // Hide the list
+          header.style.display = "none"; // Hide the header
+          return;
+        }
+
+        // Hide the "no definitions found" message if there are results
+        noDefinitions.style.display = "none";
+
         // Loop through each definition in the 'list' array
         data.list.forEach((item) => {
-          // Create a new <li> element for each definition
           const listItem = document.createElement("li");
 
           let { word, definition, example, author, thumbs_down, thumbs_up, permalink } = item;
@@ -139,31 +183,34 @@
         const term = encodeURIComponent(inputVal);
         const url = `quick-define/${term}`;
 
-        const res = await fetch(url);
-        const val = await res.json();
-        console.log(val);
+        try {
+          const res = await fetch(url);
+          if (!res.ok) {
+            throw new Error("Failed to fetch definitions");
+          }
+          const val = await res.json();
 
-        renderResults(val);
+          renderResults(val);
+        } catch (error) {
+          console.error(error);
+          // Show the "no definitions found" message in case of error
+          const noDefinitions = document.getElementById("no-definitions");
+          const resultsList = document.getElementById("results-list");
+          const header = document.querySelector("h1");
+
+          noDefinitions.style.display = "block"; // Show error message
+          resultsList.style.display = "none"; // Hide results list
+          header.style.display = "none"; // Hide header
+        }
       };
+
+      // Add event listener to trigger submit when "Enter" is pressed
+      document.getElementById("quick-define-input").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault(); // Prevent form submission
+          submitQuickDef(); // Trigger the submit function
+        }
+      });
     </script>
-  </head>
-  <body>
-    <div>
-      <form id="quick-define-form">
-        <!-- Container for input and button -->
-        <div class="input-button-container">
-          <input type="text" id="quick-define-input" />
-          <button onclick="submitQuickDef()" type="button">Quick define</button>
-        </div>
-
-        <!-- Initially hidden header -->
-        <h1>Definitions List</h1>
-
-        <!-- Initially hidden results list -->
-        <ul id="results-list">
-          <!-- Results will be rendered here -->
-        </ul>
-      </form>
-    </div>
   </body>
 </html>

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -19,9 +20,9 @@ func HandleQuickDefine(w http.ResponseWriter, r *http.Request) {
 	term := vars["term"]
 	client := &http.Client{}
 
-	if  len(term) < 1 {
-		ReturnErrorResponse(w, errors.New("no term specified"),  "no term specified", http.StatusBadRequest)
-		return 
+	if len(term) < 1 {
+		ReturnErrorResponse(w, errors.New("no term specified"), "no term specified", http.StatusBadRequest)
+		return
 	}
 
 	url := fmt.Sprintf("https://api.urbandictionary.com/v0/define?term=%s", term)
@@ -40,31 +41,35 @@ func HandleQuickDefine(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	bodyBytes, err := io.ReadAll(res.Body)
 	defer res.Body.Close()
 
 	if res.StatusCode == http.StatusOK {
-		bodyBytes, err := io.ReadAll(res.Body)
 		if err != nil {
 			ReturnErrorResponse(w, err, message, http.StatusInternalServerError)
 			return
 		}
 
-		defs := &UrbanDictionaryResponse{}
+		defs := &UrbanDictionaryResponse{
+			List: []UrbanDictionaryDefinition{},
+		}
 		err = json.Unmarshal(bodyBytes, defs)
 		if err != nil {
 			ReturnErrorResponse(w, err, message, http.StatusInternalServerError)
 			return
 		}
-		
+
 		retval, err := json.MarshalIndent(defs, "", "  ")
 		if err != nil {
 			ReturnErrorResponse(w, err, message, http.StatusInternalServerError)
 			return
-		} // log.Print(PrettyPrint(defs.List[0]))
-		
+		}
+
 		w.Write(retval)
 		return
 	}
+
+	log.Println("error:", string(bodyBytes))
 
 	ReturnErrorResponse(w, err, message, http.StatusInternalServerError)
 }
