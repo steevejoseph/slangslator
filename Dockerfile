@@ -16,6 +16,9 @@ FROM alpine:latest
 # Copy the compiled Go binary from the builder stage
 COPY --from=builder /app/myapp /
 
+# Copy the 'public' directory into the image (it should be in the same directory as the Dockerfile)
+COPY ./public /public
+
 # Set an environment variable to configure the port (default to 8080)
 ENV PORT=8080
 
