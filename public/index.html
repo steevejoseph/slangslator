@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Centered Input and Button</title>
+    <style>
+      /* Apply flexbox to the body element */
+      body {
+        display: flex; /* Use flexbox layout */
+        flex-direction: column; /* Stack content vertically */
+        justify-content: center; /* Center content horizontally */
+        align-items: center; /* Center content vertically */
+        height: 100vh; /* Full height of the viewport */
+        margin: 0; /* Remove default margin */
+      }
+
+      /* Style for the form container */
+      #quick-define-form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        max-width: 600px; /* You can adjust the max-width as needed */
+        padding: 20px;
+        box-sizing: border-box;
+      }
+
+      /* Container for the input and button, use flex to align them horizontally */
+      .input-button-container {
+        display: flex;
+        justify-content: center; /* Align items horizontally */
+        align-items: center; /* Vertically align input and button */
+        width: 100%;
+      }
+
+      /* Add some space between input and button */
+      input,
+      button {
+        margin: 10px;
+        padding: 10px;
+        font-size: 16px;
+      }
+
+      /* Initially hide the results list */
+      #results-list {
+        width: 100%;
+        max-width: 600px; /* Ensure the list doesn't extend beyond the input form */
+        height: 300px; /* Set a fixed height for the scrollable list */
+        overflow-y: auto; /* Enable vertical scrolling if the content exceeds the height */
+        padding: 0;
+        margin: 0;
+        list-style-type: none;
+        border: 1px solid #ddd;
+        background-color: #f9f9f9;
+        display: none; /* Hide initially */
+      }
+
+      /* Style for each list item */
+      #results-list li {
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+      }
+
+      /* Style the strong elements */
+      strong {
+        font-weight: bold;
+      }
+
+      a {
+        color: #007bff;
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      /* Initially hide the header */
+      h1 {
+        display: none; /* Hide initially */
+      }
+    </style>
+    <script>
+      function assert(condition, message) {
+        if (!condition) {
+          throw new Error(message || "Assertion failed");
+        }
+      }
+
+      const removeBrackets = str => str.replace(/[\[\]{}]/g, '');
+
+      // Function to render the data as a list
+      const renderResults = (data) => {
+        // Get the <ul> element to append the list items
+        const resultsList = document.getElementById("results-list");
+        const header = document.querySelector("h1");
+
+        // Clear any existing list items
+        resultsList.innerHTML = "";
+
+        // Loop through each definition in the 'list' array
+        data.list.forEach((item) => {
+          // Create a new <li> element for each definition
+          const listItem = document.createElement("li");
+
+          let { word, definition, example, author, thumbs_down, thumbs_up, permalink } = item;
+
+          definition = removeBrackets(definition);
+          example = removeBrackets(example);
+
+          // Create the content for the list item
+          const content = `
+            <strong>Word:</strong> ${word} <br>
+            <strong>Definition:</strong> ${definition} <br>
+            <strong>Example:</strong> ${example} <br>
+            <strong>Author:</strong> ${author} <br>
+            <strong>Thumbs Up:</strong> ${thumbs_up} | 
+            <strong>Thumbs Down:</strong> ${thumbs_down} <br>
+            <a href="${permalink}" target="_blank">Link to Definition</a>
+          `;
+
+          // Set the inner HTML of the list item
+          listItem.innerHTML = content;
+
+          // Append the list item to the <ul>
+          resultsList.appendChild(listItem);
+        });
+
+        // Show the header and results list after rendering the data
+        header.style.display = "block"; // Show the header
+        resultsList.style.display = "block"; // Show the results list
+      };
+
+      const submitQuickDef = async () => {
+        const inputVal = document.querySelector("#quick-define-input").value;
+        assert(inputVal !== null);
+
+        const term = encodeURIComponent(inputVal);
+        const url = `quick-define/${term}`;
+
+        const res = await fetch(url);
+        const val = await res.json();
+        console.log(val);
+
+        renderResults(val);
+      };
+    </script>
+  </head>
+  <body>
+    <div>
+      <form id="quick-define-form">
+        <!-- Container for input and button -->
+        <div class="input-button-container">
+          <input type="text" id="quick-define-input" />
+          <button onclick="submitQuickDef()" type="button">Quick define</button>
+        </div>
+
+        <!-- Initially hidden header -->
+        <h1>Definitions List</h1>
+
+        <!-- Initially hidden results list -->
+        <ul id="results-list">
+          <!-- Results will be rendered here -->
+        </ul>
+      </form>
+    </div>
+  </body>
+</html>
